@@ -933,6 +933,16 @@ function todayIso(){
             reason = 'Revisar valor de CPA antes de precificar';
         }
 
+        var basisEcpm = Number(basis.ecpm);
+        if (!isFinite(basisEcpm) || basisEcpm <= 0) {
+            var metricsEcpm = block && block.metrics ? Number(block.metrics.ecpm) : 0;
+            basisEcpm = isFinite(metricsEcpm) ? metricsEcpm : 0;
+        }
+        if (suggestion === 'Aumentar a regra' && basisEcpm > 780) {
+            suggestion = 'Manter a regra';
+            reason = 'eCPM (' + money(basisEcpm) + ') acima do teto de $780';
+        }
+
         if (!suggestion) return 'Sem sugestão disponível';
         return suggestion + ' — ' + reason;
     }

@@ -884,6 +884,7 @@ if (!startDate && !endDate) {
       hasData: true,
       coverage: coverage,
       cpc: metrics.cpc || 0,
+      ecpm: metrics.ecpm || 0,
       cpcCorrigido: cpcCorrigido,
       hoursUsed: relevant.map(formatHourLabel_)
     };
