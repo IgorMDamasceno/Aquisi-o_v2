@@ -869,9 +869,23 @@ if (!startDate && !endDate) {
     }
 
     var agg = blankAgg_();
+    var weightedEcpmSum = 0;
+    var requestWeightSum = 0;
     relevant.forEach(function(ms){
       var key = prefix + ms;
-      mergeAgg_(agg, bucketMap[key]);
+      var bucket = bucketMap[key];
+      if (!bucket) return;
+      mergeAgg_(agg, bucket);
+      var hourRequests = bucket.requests || 0;
+      if (hourRequests > 0) {
+        var hourImpressions = bucket.impressions || 0;
+        var hourRevenue = bucket.revenue || 0;
+        if (hourImpressions > 0) {
+          var hourEcpm = (hourRevenue * 1000) / hourImpressions;
+          weightedEcpmSum += hourEcpm * hourRequests;
+          requestWeightSum += hourRequests;
+        }
+      }
     });
 
     var metrics = finalizeAgg_(agg);
@@ -879,12 +893,13 @@ if (!startDate && !endDate) {
     var perdaUsuario = (agg.requests * (coverage / 100)) - agg.impressions;
     var correctedClicks = agg.clicks + Math.ceil(Math.max(0, perdaUsuario));
     var cpcCorrigido = correctedClicks > 0 ? (agg.revenue / correctedClicks) : 0;
+    var weightedEcpm = requestWeightSum > 0 ? (weightedEcpmSum / requestWeightSum) : metrics.ecpm;
 
     return {
       hasData: true,
       coverage: coverage,
       cpc: metrics.cpc || 0,
-      ecpm: metrics.ecpm || 0,
+      ecpm: weightedEcpm || 0,
       cpcCorrigido: cpcCorrigido,
       hoursUsed: relevant.map(formatHourLabel_)
     };

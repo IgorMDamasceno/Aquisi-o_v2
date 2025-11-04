@@ -1877,12 +1877,12 @@ function todayIso(){
       }
       
       function getAggregatedMetrics(details, blockIdentifier) {
-          let agg = { impressions: 0, clicks: 0, revenue: 0, requests: 0, cpcCorrigidoSum: 0, cpcCorrigidoCount: 0, coverage_w_sum: 0, weight_w_sum: 0 };
+          let agg = { impressions: 0, clicks: 0, revenue: 0, requests: 0, cpcCorrigidoSum: 0, cpcCorrigidoCount: 0, coverage_w_sum: 0, weight_w_sum: 0, ecpmWeightedSum: 0, requestsForEcpm: 0 };
           let found = false;
           details.forEach(function(d) {
               if (String(d.adunit).toLowerCase().includes(blockIdentifier)) {
                   const m = d.metrics;
-                  const weight = m.requests;
+                  const weight = Number(m.requests) || 0;
                   agg.impressions += m.impressions;
                   agg.clicks += m.clicks;
                   agg.revenue += m.revenue;
@@ -1896,6 +1896,11 @@ function todayIso(){
                       agg.cpcCorrigidoSum += m.cpcCorrigido * m.clicks;
                       agg.cpcCorrigidoCount += m.clicks;
                   }
+                  if (weight > 0 && m.impressions > 0) {
+                      const hourEcpm = (m.revenue * 1000) / m.impressions;
+                      agg.ecpmWeightedSum += hourEcpm * weight;
+                      agg.requestsForEcpm += weight;
+                  }
                   found = true;
               }
           });
@@ -1903,8 +1908,19 @@ function todayIso(){
           return {
               cpc: agg.clicks > 0 ? agg.revenue / agg.clicks : 0,
               coverage: agg.weight_w_sum > 0 ? (agg.coverage_w_sum / agg.weight_w_sum) * 100 : 0,
-              cpcCorrigido: agg.cpcCorrigidoCount > 0 ? agg.cpcCorrigidoSum / agg.cpcCorrigidoCount : 0
+              cpcCorrigido: agg.cpcCorrigidoCount > 0 ? agg.cpcCorrigidoSum / agg.cpcCorrigidoCount : 0,
+              ecpm: agg.requestsForEcpm > 0 ? (agg.ecpmWeightedSum / agg.requestsForEcpm) : (agg.impressions > 0 ? (agg.revenue * 1000) / agg.impressions : 0)
           };
+      }
+
+      function applyEcpmCap(suggestion, reason, ecpmValue) {
+        if (suggestion === 'Aumentar a regra' && ecpmValue > 780) {
+          return {
+            suggestion: 'Manter a regra',
+            reason: 'eCPM (' + money(ecpmValue) + ') acima do teto de $780'
+          };
+        }
+        return { suggestion: suggestion, reason: reason };
       }
       
       function generateCard(title, suggestion, reason, data) {
@@ -1925,7 +1941,8 @@ function todayIso(){
           else if (mobTop.coverage < 30) { sugg = 'Reduzir a regra'; reason = 'Cobertura < 30%'; }
           else if (mobTop.cpc < cpcAlvo) { sugg = 'Aumentar a regra'; reason = 'Cobertura (30-80%) e CPC < Alvo'; }
           else { sugg = 'Manter a regra'; reason = 'Cobertura (30-80%) e CPC >= Alvo'; }
-          suggestionsHtml += generateCard('P1: mob_top', sugg, reason, { [periodLabel]: periodValue, Cobertura: pct(mobTop.coverage, 2), CPC: money(mobTop.cpc, 3), 'Alvo': money(cpcAlvo, 3) });
+          var adjusted = applyEcpmCap(sugg, reason, mobTop.ecpm);
+          suggestionsHtml += generateCard('P1: mob_top', adjusted.suggestion, adjusted.reason, { [periodLabel]: periodValue, Cobertura: pct(mobTop.coverage, 2), CPC: money(mobTop.cpc, 3), 'Alvo': money(cpcAlvo, 3), 'eCPM': money(mobTop.ecpm) });
         }
         const mobInterstitial = getAggregatedMetrics(filteredDetails, 'mob_interstitial');
         if (mobInterstitial) {
@@ -1934,7 +1951,8 @@ function todayIso(){
           else if (mobInterstitial.coverage < 80) { sugg = 'Reduzir a regra'; reason = 'Cobertura < 80%'; }
           else if (mobInterstitial.cpc < cpcAlvo) { sugg = 'Aumentar a regra'; reason = 'Cobertura (>80%) e CPC < Alvo'; }
           else { sugg = 'Manter a regra'; reason = 'Cobertura (80-95%) e CPC >= Alvo'; }
-          suggestionsHtml += generateCard('P1: mob_interstitial', sugg, reason, { [periodLabel]: periodValue, Cobertura: pct(mobInterstitial.coverage, 2), CPC: money(mobInterstitial.cpc, 3), 'Alvo': money(cpcAlvo, 3) });
+          var adjustedInterstitial = applyEcpmCap(sugg, reason, mobInterstitial.ecpm);
+          suggestionsHtml += generateCard('P1: mob_interstitial', adjustedInterstitial.suggestion, adjustedInterstitial.reason, { [periodLabel]: periodValue, Cobertura: pct(mobInterstitial.coverage, 2), CPC: money(mobInterstitial.cpc, 3), 'Alvo': money(cpcAlvo, 3), 'eCPM': money(mobInterstitial.ecpm) });
         }
       } else if (partData.parte === 'P2') {
         const mobTopP2 = getAggregatedMetrics(filteredDetails, 'mob_top');
@@ -1943,14 +1961,16 @@ function todayIso(){
           if (mobTopP2.coverage > 80) { sugg = 'Aumentar a regra'; reason = 'Cobertura > 80% (Meta 75%)'; }
           else if (mobTopP2.coverage < 70) { sugg = 'Reduzir a regra'; reason = 'Cobertura < 70% (Meta 75%)'; }
           else { sugg = 'Manter a regra'; reason = 'Cobertura na margem (70-80%)'; }
-          suggestionsHtml += generateCard('P2: mob_top', sugg, reason, { [periodLabel]: periodValue, Cobertura: pct(mobTopP2.coverage, 2) });
+          var adjustedP2Top = applyEcpmCap(sugg, reason, mobTopP2.ecpm);
+          suggestionsHtml += generateCard('P2: mob_top', adjustedP2Top.suggestion, adjustedP2Top.reason, { [periodLabel]: periodValue, Cobertura: pct(mobTopP2.coverage, 2), 'eCPM': money(mobTopP2.ecpm) });
         }
         const offerwall = getAggregatedMetrics(filteredDetails, 'offerwall') || getAggregatedMetrics(filteredDetails, 'rewarded');
         if (offerwall && mobTopP2) {
           let sugg = '', reason = '';
           if (offerwall.cpcCorrigido < mobTopP2.cpc) { sugg = 'Aumentar a regra'; reason = 'CPC Corrigido < CPC mob_top P2'; }
           else { sugg = 'Manter a regra'; reason = 'CPC Corrigido >= CPC mob_top P2'; }
-          suggestionsHtml += generateCard('P2: offerwall/rewarded', sugg, reason, { [periodLabel]: periodValue, 'CPC Corrigido': money(offerwall.cpcCorrigido, 3), 'CPC mob_top P2': money(mobTopP2.cpc, 3) });
+          var adjustedOfferwall = applyEcpmCap(sugg, reason, offerwall.ecpm);
+          suggestionsHtml += generateCard('P2: offerwall/rewarded', adjustedOfferwall.suggestion, adjustedOfferwall.reason, { [periodLabel]: periodValue, 'CPC Corrigido': money(offerwall.cpcCorrigido, 3), 'CPC mob_top P2': money(mobTopP2.cpc, 3), 'eCPM': money(offerwall.ecpm) });
         }
       } else if (partData.parte === 'Quiz') {
         const rewarded = getAggregatedMetrics(filteredDetails, 'rewarded');
