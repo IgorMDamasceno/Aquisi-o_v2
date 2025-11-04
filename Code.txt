@@ -366,7 +366,7 @@ function getDashboardData(params) {
   params = params || {};
   var pessoa = params.pessoa, operacao = params.operacao, paginasSelecionadas = params.paginasSelecionadas || [],
       startDate = params.startDate, endDate = params.endDate, granularity = params.granularity || 'hour';
-  var gran = (granularity === 'day' || granularity === 'last6h') ? granularity : 'hour';
+  var gran = (granularity === 'day' || granularity === 'last6h' || granularity === 'last3h') ? granularity : 'hour';
   var emptyReturn = { pages: [], compare: [], compareBlocks: [], granularity: gran, seriesChart: [], labelsChart: [], seriesChartByBlock: {}, pricingRulesAdSeleto: [], pricingRulesIgoal: [] };
   if (!pessoa || !operacao || !paginasSelecionadas.length) return emptyReturn;
 
@@ -402,7 +402,8 @@ if (!startDate && !endDate) {
   var maxDate = endDate ? parseDate_(endDate) : null;
 
   var cutoffMs = null;
-  if (granularity === 'last6h') {
+  var rollingHours = granularity === 'last3h' ? 3 : (granularity === 'last6h' ? 6 : null);
+  if (rollingHours !== null) {
     let maxMsMatched = 0;
     rows.forEach(function(row) {
         var d = parseDate_(row[col.date]);
@@ -412,13 +413,13 @@ if (!startDate && !endDate) {
             if (ms > maxMsMatched) maxMsMatched = ms;
         }
     });
-    if (maxMsMatched > 0) cutoffMs = maxMsMatched - (6 * 60 * 60 * 1000);
+    if (maxMsMatched > 0) cutoffMs = maxMsMatched - (rollingHours * 60 * 60 * 1000);
   }
 
   function rowDateOk_(row) {
     var d = parseDate_(row[col.date]);
     if (!d) return false;
-    if (granularity === 'last6h') {
+    if (rollingHours !== null) {
         if (cutoffMs === null) return false;
         var h = parseInt(row[col.hour], 10) || 0;
         var ms = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, 0, 0, 0).getTime();
@@ -637,7 +638,7 @@ if (!startDate && !endDate) {
 function getCoordinationData(params) {
   params = params || {};
   var pessoa = params.pessoa;
-  var agrupamento = params.agrupamento === 'last6h' ? 'last6h' : 'day';
+  var agrupamento = (params.agrupamento === 'last6h' || params.agrupamento === 'last3h') ? params.agrupamento : 'day';
   var startDate = params.startDate;
   var endDate = params.endDate;
 
@@ -714,7 +715,8 @@ if (!startDate && !endDate) {
   var maxDate = endDate ? parseDate_(endDate) : null;
 
   var cutoffMs = null;
-  if (agrupamento === 'last6h') {
+  var rollingHours = agrupamento === 'last3h' ? 3 : (agrupamento === 'last6h' ? 6 : null);
+  if (rollingHours !== null) {
     var maxMsMatched = 0;
     rows.forEach(function(row){
       var d = parseDate_(row[col.date]);
@@ -723,13 +725,13 @@ if (!startDate && !endDate) {
       var ms = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, 0, 0, 0).getTime();
       if (ms > maxMsMatched) maxMsMatched = ms;
     });
-    if (maxMsMatched > 0) cutoffMs = maxMsMatched - (6 * 60 * 60 * 1000);
+    if (maxMsMatched > 0) cutoffMs = maxMsMatched - (rollingHours * 60 * 60 * 1000);
   }
 
   function rowDateOk_(row) {
     var d = parseDate_(row[col.date]);
     if (!d) return false;
-    if (agrupamento === 'last6h') {
+    if (rollingHours !== null) {
       if (cutoffMs === null) return false;
       var h = parseInt(row[col.hour], 10) || 0;
       var ms = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, 0, 0, 0).getTime();

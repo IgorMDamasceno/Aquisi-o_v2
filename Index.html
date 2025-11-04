@@ -36,6 +36,10 @@
     tbody tr:hover { background-color: rgba(30, 41, 59, 0.6); }
     .pricing-table td, .pricing-table th { padding: 8px; }
     .pricing-table th { cursor: pointer; }
+    th[data-cfg-sort] { transition: color 0.15s ease-in-out; }
+    th[data-cfg-sort]:hover { color: #e2e8f0; }
+    th[data-cfg-sort]:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; color: #e2e8f0; }
+    .cfg-sort-indicator { color: inherit; font-size: 0.75rem; }
 
     #toast-container { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 50; display: flex; flex-direction: column; gap: 0.75rem; }
     .toast {
@@ -224,29 +228,10 @@
               </select>
             </div>
           </div>
-          <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 items-end">
             <div class="lg:col-span-2">
               <label class="block text-xs text-slate-400 mb-1">Busca rápida</label>
               <input id="cfg-filter-search" type="text" class="w-full pill rounded-lg px-3 py-2 text-sm" placeholder="Filtrar por página, canal, URL..." />
-            </div>
-            <div>
-              <label class="block text-xs text-slate-400 mb-1">Ordenar por</label>
-              <select id="cfg-sort-field" class="w-full pill rounded-lg px-3 py-2 text-sm">
-                <option value="pessoa">Pessoa (A-Z)</option>
-                <option value="operacao">Operação (A-Z)</option>
-                <option value="pagina">Página (A-Z)</option>
-                <option value="parte">Parte</option>
-                <option value="canal">Canal (A-Z)</option>
-                <option value="rede">Rede (A-Z)</option>
-                <option value="moeda">Moeda</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs text-slate-400 mb-1">Direção</label>
-              <select id="cfg-sort-dir" class="w-full pill rounded-lg px-3 py-2 text-sm">
-                <option value="asc">Ascendente</option>
-                <option value="desc">Descendente</option>
-              </select>
             </div>
             <div class="flex justify-end">
               <button id="cfg-filter-clear" type="button" class="pill px-4 py-2 rounded-xl text-sm">Limpar filtros</button>
@@ -254,7 +239,7 @@
           </div>
           <p id="cfg-list-count" class="text-xs text-slate-400">Carregando itens configurados...</p>
         </div>
-        <div class="overflow-auto"><table class="w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left font-semibold py-2 px-2">Pessoa</th><th class="text-left font-semibold py-2 px-2">Operação</th><th class="text-left font-semibold py-2 px-2">Página</th><th class="text-left font-semibold py-2 px-2">Parte</th><th class="text-left font-semibold py-2 px-2">Canal</th><th class="text-left font-semibold py-2 px-2">URLs</th><th class="text-left font-semibold py-2 px-2">Rede</th><th class="text-left font-semibold py-2 px-2">Moeda</th><th class="text-left font-semibold py-2 px-2">Ações</th></tr></thead><tbody id="cfg-list" class="align-top"></tbody></table></div>
+        <div class="overflow-auto"><table class="w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left font-semibold py-2 px-2 cursor-pointer select-none" data-cfg-sort="pessoa" onclick="toggleCfgListSort('pessoa')" tabindex="0" role="button">Pessoa<span class="cfg-sort-indicator"></span></th><th class="text-left font-semibold py-2 px-2 cursor-pointer select-none" data-cfg-sort="operacao" onclick="toggleCfgListSort('operacao')" tabindex="0" role="button">Operação<span class="cfg-sort-indicator"></span></th><th class="text-left font-semibold py-2 px-2 cursor-pointer select-none" data-cfg-sort="pagina" onclick="toggleCfgListSort('pagina')" tabindex="0" role="button">Página<span class="cfg-sort-indicator"></span></th><th class="text-left font-semibold py-2 px-2 cursor-pointer select-none" data-cfg-sort="parte" onclick="toggleCfgListSort('parte')" tabindex="0" role="button">Parte<span class="cfg-sort-indicator"></span></th><th class="text-left font-semibold py-2 px-2 cursor-pointer select-none" data-cfg-sort="canal" onclick="toggleCfgListSort('canal')" tabindex="0" role="button">Canal<span class="cfg-sort-indicator"></span></th><th class="text-left font-semibold py-2 px-2">URLs</th><th class="text-left font-semibold py-2 px-2 cursor-pointer select-none" data-cfg-sort="rede" onclick="toggleCfgListSort('rede')" tabindex="0" role="button">Rede<span class="cfg-sort-indicator"></span></th><th class="text-left font-semibold py-2 px-2 cursor-pointer select-none" data-cfg-sort="moeda" onclick="toggleCfgListSort('moeda')" tabindex="0" role="button">Moeda<span class="cfg-sort-indicator"></span></th><th class="text-left font-semibold py-2 px-2">Ações</th></tr></thead><tbody id="cfg-list" class="align-top"></tbody></table></div>
       </div>
     </section>
 
@@ -2423,6 +2408,7 @@ function todayIso(){
           counter.textContent = 'Exibindo '+list.length+' de '+total+' itens após filtros.';
         }
       }
+      updateCfgSortIndicators();
     }
 
     function uniqueSortedStrings(list){
@@ -2522,10 +2508,7 @@ function todayIso(){
 
       var searchInput = byId('cfg-filter-search');
       if (searchInput) searchInput.value = CFG_LIST_STATE.search || '';
-      var sortFieldSelect = byId('cfg-sort-field');
-      if (sortFieldSelect) sortFieldSelect.value = CFG_LIST_STATE.sortField || 'pessoa';
-      var sortDirSelect = byId('cfg-sort-dir');
-      if (sortDirSelect) sortDirSelect.value = CFG_LIST_STATE.sortDir || 'asc';
+      updateCfgSortIndicators();
     }
 
     function getCfgSortValue(row, field){
@@ -2544,6 +2527,34 @@ function todayIso(){
         default: value = row.pessoa; break;
       }
       return String(value == null ? '' : value).toLowerCase();
+    }
+
+    function toggleCfgListSort(field){
+      if (!field) return;
+      if (CFG_LIST_STATE.sortField === field) {
+        CFG_LIST_STATE.sortDir = CFG_LIST_STATE.sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        CFG_LIST_STATE.sortField = field;
+        CFG_LIST_STATE.sortDir = 'asc';
+      }
+      applyCfgFilters();
+    }
+    window.toggleCfgListSort = toggleCfgListSort;
+
+    function updateCfgSortIndicators(){
+      var headers = document.querySelectorAll('[data-cfg-sort]');
+      headers.forEach(function(th){
+        var field = th.getAttribute('data-cfg-sort');
+        var indicator = th.querySelector('.cfg-sort-indicator');
+        if (CFG_LIST_STATE.sortField === field) {
+          var ascending = CFG_LIST_STATE.sortDir !== 'desc';
+          if (indicator) indicator.textContent = ascending ? ' ▲' : ' ▼';
+          th.setAttribute('aria-sort', ascending ? 'ascending' : 'descending');
+        } else {
+          if (indicator) indicator.textContent = '';
+          th.setAttribute('aria-sort', 'none');
+        }
+      });
     }
 
     function applyCfgFilters(){
@@ -2647,28 +2658,21 @@ function todayIso(){
         });
       }
 
-      var sortFieldSelect = byId('cfg-sort-field');
-      if (sortFieldSelect) {
-        sortFieldSelect.addEventListener('change', function(){
-          CFG_LIST_STATE.sortField = this.value || 'pessoa';
-          applyCfgFilters();
-        });
-      }
-
-      var sortDirSelect = byId('cfg-sort-dir');
-      if (sortDirSelect) {
-        sortDirSelect.addEventListener('change', function(){
-          CFG_LIST_STATE.sortDir = this.value || 'asc';
-          applyCfgFilters();
-        });
-      }
-
       var clearButton = byId('cfg-filter-clear');
       if (clearButton) {
         clearButton.addEventListener('click', function(){ resetCfgListFilters(); });
       }
 
       updateCfgFilterOptions();
+
+      document.querySelectorAll('[data-cfg-sort]').forEach(function(th){
+        th.addEventListener('keydown', function(evt){
+          if (evt.key === 'Enter' || evt.key === ' ') {
+            evt.preventDefault();
+            toggleCfgListSort(th.getAttribute('data-cfg-sort'));
+          }
+        });
+      });
     }
 
     function editCfgItem(id) {
