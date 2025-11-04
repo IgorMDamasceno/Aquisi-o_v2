@@ -938,7 +938,7 @@ function todayIso(){
             var metricsEcpm = block && block.metrics ? Number(block.metrics.ecpm) : 0;
             basisEcpm = isFinite(metricsEcpm) ? metricsEcpm : 0;
         }
-        if (suggestion === 'Aumentar a regra' && basisEcpm > 780) {
+        if (suggestion === 'Aumentar a regra' && basisEcpm >= 780) {
             suggestion = 'Manter a regra';
             reason = 'eCPM (' + money(basisEcpm) + ') acima do teto de $780';
         }
@@ -1914,7 +1914,7 @@ function todayIso(){
       }
 
       function applyEcpmCap(suggestion, reason, ecpmValue) {
-        if (suggestion === 'Aumentar a regra' && ecpmValue > 780) {
+        if (suggestion === 'Aumentar a regra' && ecpmValue >= 780) {
           return {
             suggestion: 'Manter a regra',
             reason: 'eCPM (' + money(ecpmValue) + ') acima do teto de $780'
