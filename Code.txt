@@ -593,7 +593,17 @@ if (!startDate && !endDate) {
     var interactionRateCapped = Math.max(0, Math.min(interactionRate, 100));
     var cpcCorrigido = cpcP1P2 * (interactionRateCapped / 100);
     pages.push({ page: pgName, parts: parts, total: totalFinal, extras: { rps, interactionRate, cpcP1P2, cpcCorrigido } });
-    compare.push({ page: pgName, ...totalFinal, rps, interactionRate, cpcP1P2, cpcCorrigido });
+    compare.push({
+      page: pgName,
+      ...totalFinal,
+      rps,
+      interactionRate,
+      cpcP1P2,
+      cpcCorrigido,
+      reqP1Interstitial: reqInt,
+      revenueP1P2: revenueP1P2,
+      clicksP1P2: clicksP1P2
+    });
     Object.keys(blocksAgg).filter(k=>k.startsWith(`${pgName}||`)).forEach(k => {
       compareBlocks.push({ page: pgName, label: blocksAgg[k].label, parte: blocksAgg[k].parte, metrics: finalizeAgg_(blocksAgg[k].agg, false) });
     });

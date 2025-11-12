@@ -1650,8 +1650,16 @@ function todayIso(){
       function tableFor(list){
         var rows = sortBlockEntries(list, BLOCK_SORT);
         if (!rows.length) return '';
+        var totals = { revenue:0, impressions:0, clicks:0, requests:0, ecpmWeight:0, coverageWeight:0 };
         var body = rows.map(function(r){
           var m = r.metrics || {};
+          var req = m.requests || 0;
+          totals.revenue += m.revenue || 0;
+          totals.impressions += m.impressions || 0;
+          totals.clicks += m.clicks || 0;
+          totals.requests += req;
+          if (req > 0 && typeof m.ecpm === 'number') totals.ecpmWeight += m.ecpm * req;
+          if (req > 0 && typeof m.coverage === 'number') totals.coverageWeight += m.coverage * req;
           return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/60">'
             + '<td class="py-2 pr-2">'+escapeHtml(r.page || '-')+'</td>'
             + '<td class="py-2 pr-2 text-right">'+money(m.revenue)+'</td>'
@@ -1664,6 +1672,21 @@ function todayIso(){
             + '<td class="py-2 pr-2 text-right">'+money(m.cpc,3)+'</td>'
             + '</tr>';
         }).join('');
+        var ctrTotal = totals.impressions > 0 ? (totals.clicks / totals.impressions) * 100 : 0;
+        var ecpmTotal = totals.requests > 0 ? (totals.ecpmWeight / totals.requests) : (totals.impressions > 0 ? (totals.revenue * 1000 / totals.impressions) : 0);
+        var coverageTotal = totals.requests > 0 ? (totals.coverageWeight / totals.requests) : 0;
+        var cpcTotal = totals.clicks > 0 ? (totals.revenue / totals.clicks) : 0;
+        var totalRow = '<tr class="border-t-2 border-slate-600 font-semibold bg-slate-800/40">'
+          + '<td class="py-2 pr-2">Total</td>'
+          + '<td class="py-2 pr-2 text-right">'+money(totals.revenue)+'</td>'
+          + '<td class="py-2 pr-2 text-right">'+num(totals.impressions,0)+'</td>'
+          + '<td class="py-2 pr-2 text-right">'+num(totals.clicks,0)+'</td>'
+          + '<td class="py-2 pr-2 text-right">'+pct(ctrTotal,2)+'</td>'
+          + '<td class="py-2 pr-2 text-right">'+money(ecpmTotal)+'</td>'
+          + '<td class="py-2 pr-2 text-right">'+num(totals.requests,0)+'</td>'
+          + '<td class="py-2 pr-2 text-right">'+pct(coverageTotal,2)+'</td>'
+          + '<td class="py-2 pr-2 text-right">'+money(cpcTotal,3)+'</td>'
+          + '</tr>';
         // MODIFICADO: Cabeçalhos da tabela agora são clicáveis para ordenação
         var head = '<thead class="text-slate-400"><tr>'
           + '<th class="text-left py-2 pr-2 cursor-pointer" onclick="sortByBlockHeader(\'page\')">Página'+blockSortIndicator('page')+'</th>'
@@ -1676,7 +1699,7 @@ function todayIso(){
           + '<th class="text-right py-2 pr-2 cursor-pointer" onclick="sortByBlockHeader(\'coverage\')">Cobertura'+blockSortIndicator('coverage')+'</th>'
           + '<th class="text-right py-2 pr-2 cursor-pointer" onclick="sortByBlockHeader(\'cpc\')">CPC'+blockSortIndicator('cpc')+'</th>'
           + '</tr></thead>';
-        return '<div class="overflow-auto"><table class="w-full text-sm">'+head+'<tbody>'+body+'</tbody></table></div>';
+        return '<div class="overflow-auto"><table class="w-full text-sm">'+head+'<tbody>'+body+totalRow+'</tbody></table></div>';
       }
 
       function sectionHtml(partKey, title, borderClass, textClass){
@@ -1848,7 +1871,38 @@ function todayIso(){
         }
       });
       
-      if(res.compare&&res.compare.length){var cmp=document.createElement('div');cmp.className='card rounded-2xl p-5';cmp.innerHTML='<h3 class="text-lg font-bold mb-3">Comparativo — Total da Página</h3><div class="overflow-auto"><table class="w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left py-2 pr-2">Página</th><th class="text-right py-2 pr-2">Receita</th><th class="text-right py-2 pr-2">Impressões</th><th class="text-right py-2 pr-2">Cliques</th><th class="text-right py-2 pr-2">CTR</th><th class="text-right py-2 pr-2">eCPM</th><th class="text-right py-2 pr-2">CPC</th><th class="text-right py-2 pr-2">CPC Corrigido</th><th class="text-right py-2 pr-2">RPS</th><th class="text-right py-2 pr-2">Taxa de interação</th></tr></thead><tbody>'+res.compare.map(function(r){var cpcDisplay=(typeof r.cpcP1P2==='number')?r.cpcP1P2:r.cpc;return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/60"><td class="py-2 pr-2">'+r.page+'</td><td class="py-2 pr-2 text-right">'+money(r.revenue)+'</td><td class="py-2 pr-2 text-right">'+num(r.impressions,0)+'</td><td class="py-2 pr-2 text-right">'+num(r.clicks,0)+'</td><td class="py-2 pr-2 text-right">'+pct(r.ctr,2)+'</td><td class="py-2 pr-2 text-right">'+money(r.ecpm)+'</td><td class="py-2 pr-2 text-right">'+money(cpcDisplay,3)+'</td><td class="py-2 pr-2 text-right">'+money(r.cpcCorrigido,3)+'</td><td class="py-2 pr-2 text-right">'+money(r.rps)+'</td><td class="py-2 pr-2 text-right">'+pct(r.interactionRate)+'</td></tr>';}).join('')+'</tbody></table></div>';hostC.appendChild(cmp);}
+      if(res.compare&&res.compare.length){
+        var cmp=document.createElement('div');
+        cmp.className='card rounded-2xl p-5';
+        var totals={revenue:0,impressions:0,clicks:0,requests:0,revenueP1P2:0,clicksP1P2:0,reqP1Interstitial:0,ecpmWeight:0,weightSum:0};
+        var rowsHtml=res.compare.map(function(r){
+          var cpcDisplay=(typeof r.cpcP1P2==='number')?r.cpcP1P2:r.cpc;
+          var req=r.requests||0;
+          var reqInt=typeof r.reqP1Interstitial==='number'?r.reqP1Interstitial:0;
+          var revP1P2=(typeof r.revenueP1P2==='number')?r.revenueP1P2:r.revenue;
+          var clkP1P2=(typeof r.clicksP1P2==='number')?r.clicksP1P2:r.clicks;
+          totals.revenue+=r.revenue||0;
+          totals.impressions+=r.impressions||0;
+          totals.clicks+=r.clicks||0;
+          totals.requests+=req;
+          totals.revenueP1P2+=revP1P2||0;
+          totals.clicksP1P2+=clkP1P2||0;
+          totals.reqP1Interstitial+=reqInt;
+          if(req>0 && typeof r.ecpm==='number'){totals.ecpmWeight+=r.ecpm*req;totals.weightSum+=req;}
+          return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/60"><td class="py-2 pr-2">'+r.page+'</td><td class="py-2 pr-2 text-right">'+money(r.revenue)+'</td><td class="py-2 pr-2 text-right">'+num(r.impressions,0)+'</td><td class="py-2 pr-2 text-right">'+num(r.clicks,0)+'</td><td class="py-2 pr-2 text-right">'+pct(r.ctr,2)+'</td><td class="py-2 pr-2 text-right">'+money(r.ecpm)+'</td><td class="py-2 pr-2 text-right">'+money(cpcDisplay,3)+'</td><td class="py-2 pr-2 text-right">'+money(r.cpcCorrigido,3)+'</td><td class="py-2 pr-2 text-right">'+money(r.rps)+'</td><td class="py-2 pr-2 text-right">'+pct(r.interactionRate)+'</td></tr>';
+        }).join('');
+        var ctrTotal=totals.impressions>0?(totals.clicks/totals.impressions)*100:0;
+        var ecpmTotal=totals.weightSum>0?(totals.ecpmWeight/totals.weightSum):(totals.impressions>0?(totals.revenue*1000/totals.impressions):0);
+        var cpcClicksBase=totals.clicksP1P2>0?totals.clicksP1P2:totals.clicks;
+        var cpcRevenueBase=totals.clicksP1P2>0?totals.revenueP1P2:totals.revenue;
+        var cpcTotal=cpcClicksBase>0?(cpcRevenueBase/cpcClicksBase):0;
+        var interactionRateTotal=totals.reqP1Interstitial>0?(totals.clicksP1P2/totals.reqP1Interstitial)*100:0;
+        var rpsTotal=totals.reqP1Interstitial>0?(totals.revenueP1P2/totals.reqP1Interstitial)*1000:0;
+        var cpcCorrigidoTotal=cpcTotal*(interactionRateTotal/100);
+        var totalRow='<tr class="border-t-2 border-slate-600 font-semibold bg-slate-800/40"><td class="py-2 pr-2">Total</td><td class="py-2 pr-2 text-right">'+money(totals.revenue)+'</td><td class="py-2 pr-2 text-right">'+num(totals.impressions,0)+'</td><td class="py-2 pr-2 text-right">'+num(totals.clicks,0)+'</td><td class="py-2 pr-2 text-right">'+pct(ctrTotal,2)+'</td><td class="py-2 pr-2 text-right">'+money(ecpmTotal)+'</td><td class="py-2 pr-2 text-right">'+money(cpcTotal,3)+'</td><td class="py-2 pr-2 text-right">'+money(cpcCorrigidoTotal,3)+'</td><td class="py-2 pr-2 text-right">'+money(rpsTotal)+'</td><td class="py-2 pr-2 text-right">'+pct(interactionRateTotal,2)+'</td></tr>';
+        cmp.innerHTML='<h3 class="text-lg font-bold mb-3">Comparativo — Total da Página</h3><div class="overflow-auto"><table class="w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left py-2 pr-2">Página</th><th class="text-right py-2 pr-2">Receita</th><th class="text-right py-2 pr-2">Impressões</th><th class="text-right py-2 pr-2">Cliques</th><th class="text-right py-2 pr-2">CTR</th><th class="text-right py-2 pr-2">eCPM</th><th class="text-right py-2 pr-2">CPC</th><th class="text-right py-2 pr-2">CPC Corrigido</th><th class="text-right py-2 pr-2">RPS</th><th class="text-right py-2 pr-2">Taxa de interação</th></tr></thead><tbody>'+rowsHtml+totalRow+'</tbody></table></div>';
+        hostC.appendChild(cmp);
+      }
       var chartBox=document.createElement('div');chartBox.className='card rounded-2xl p-5';chartBox.innerHTML='<div class="flex items-center justify-between gap-4 flex-wrap"><h3 class="text-lg font-bold">Evolução por Hora</h3><div class="flex items-center gap-4 text-sm flex-wrap"><div class="flex items-center gap-2"><label for="cmp-block" class="text-slate-300">Bloco:</label><select id="cmp-block" class="pill rounded-lg px-3 py-1.5"><option value="Total" selected>Total</option><option value="mob_top (P1)">mob_top (P1)</option><option value="mob_interstitial (P1)">mob_interstitial (P1)</option><option value="mob_offerwall (P2)">mob_offerwall (P2)</option><option value="mob_top (P2)">mob_top (P2)</option><option value="rewarded (Quiz)">rewarded (Quiz)</option></select></div><div class="flex items-center gap-2"><label for="cmp-metric" class="text-slate-300">Métrica:</label><select id="cmp-metric" class="pill rounded-lg px-3 py-1.5"><option value="rps" selected>RPS</option><option value="cpc">CPC</option><option value="interactionRate">Taxa de interação</option><option value="ecpm">eCPM</option><option value="coverage">Cobertura</option><option value="effectiveEcpm">eCPM Efetivo</option></select></div></div></div><div class="relative w-full h-96 mt-4"><canvas id="cmp-canvas"></canvas></div>'+(!res.seriesChart||!res.seriesChart.length?'<div class="text-slate-400 text-sm mt-2">Sem dados suficientes para o gráfico.</div>':'');hostC.appendChild(chartBox);
       if(res.seriesChart&&res.seriesChart.length){function redraw(){setupCompareChart(LAST_RES);}byId('cmp-metric').onchange=redraw;byId('cmp-block').onchange=redraw;redraw();}
       if(res.compareBlocks && res.compareBlocks.length){
