@@ -1893,9 +1893,7 @@ function todayIso(){
         }).join('');
         var ctrTotal=totals.impressions>0?(totals.clicks/totals.impressions)*100:0;
         var ecpmTotal=totals.weightSum>0?(totals.ecpmWeight/totals.weightSum):(totals.impressions>0?(totals.revenue*1000/totals.impressions):0);
-        var cpcClicksBase=totals.clicksP1P2>0?totals.clicksP1P2:totals.clicks;
-        var cpcRevenueBase=totals.clicksP1P2>0?totals.revenueP1P2:totals.revenue;
-        var cpcTotal=cpcClicksBase>0?(cpcRevenueBase/cpcClicksBase):0;
+        var cpcTotal=totals.clicks>0?(totals.revenue/totals.clicks):0;
         var interactionRateTotal=totals.reqP1Interstitial>0?(totals.clicksP1P2/totals.reqP1Interstitial)*100:0;
         var rpsTotal=totals.reqP1Interstitial>0?(totals.revenueP1P2/totals.reqP1Interstitial)*1000:0;
         var cpcCorrigidoTotal=cpcTotal*(interactionRateTotal/100);
