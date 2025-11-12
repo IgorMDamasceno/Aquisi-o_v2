@@ -366,7 +366,7 @@ function getDashboardData(params) {
   params = params || {};
   var pessoa = params.pessoa, operacao = params.operacao, paginasSelecionadas = params.paginasSelecionadas || [],
       startDate = params.startDate, endDate = params.endDate, granularity = params.granularity || 'hour';
-  var gran = (granularity === 'day' || granularity === 'last6h') ? granularity : 'hour';
+  var gran = (granularity === 'day' || granularity === 'last6h' || granularity === 'last3h') ? granularity : 'hour';
   var emptyReturn = { pages: [], compare: [], compareBlocks: [], granularity: gran, seriesChart: [], labelsChart: [], seriesChartByBlock: {}, pricingRulesAdSeleto: [], pricingRulesIgoal: [] };
   if (!pessoa || !operacao || !paginasSelecionadas.length) return emptyReturn;
 
@@ -402,7 +402,8 @@ if (!startDate && !endDate) {
   var maxDate = endDate ? parseDate_(endDate) : null;
 
   var cutoffMs = null;
-  if (granularity === 'last6h') {
+  var rollingHours = granularity === 'last3h' ? 3 : (granularity === 'last6h' ? 6 : null);
+  if (rollingHours !== null) {
     let maxMsMatched = 0;
     rows.forEach(function(row) {
         var d = parseDate_(row[col.date]);
@@ -412,13 +413,13 @@ if (!startDate && !endDate) {
             if (ms > maxMsMatched) maxMsMatched = ms;
         }
     });
-    if (maxMsMatched > 0) cutoffMs = maxMsMatched - (6 * 60 * 60 * 1000);
+    if (maxMsMatched > 0) cutoffMs = maxMsMatched - (rollingHours * 60 * 60 * 1000);
   }
 
   function rowDateOk_(row) {
     var d = parseDate_(row[col.date]);
     if (!d) return false;
-    if (granularity === 'last6h') {
+    if (rollingHours !== null) {
         if (cutoffMs === null) return false;
         var h = parseInt(row[col.hour], 10) || 0;
         var ms = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, 0, 0, 0).getTime();
@@ -592,7 +593,17 @@ if (!startDate && !endDate) {
     var interactionRateCapped = Math.max(0, Math.min(interactionRate, 100));
     var cpcCorrigido = cpcP1P2 * (interactionRateCapped / 100);
     pages.push({ page: pgName, parts: parts, total: totalFinal, extras: { rps, interactionRate, cpcP1P2, cpcCorrigido } });
-    compare.push({ page: pgName, ...totalFinal, rps, interactionRate, cpcP1P2, cpcCorrigido });
+    compare.push({
+      page: pgName,
+      ...totalFinal,
+      rps,
+      interactionRate,
+      cpcP1P2,
+      cpcCorrigido,
+      reqP1Interstitial: reqInt,
+      revenueP1P2: revenueP1P2,
+      clicksP1P2: clicksP1P2
+    });
     Object.keys(blocksAgg).filter(k=>k.startsWith(`${pgName}||`)).forEach(k => {
       compareBlocks.push({ page: pgName, label: blocksAgg[k].label, parte: blocksAgg[k].parte, metrics: finalizeAgg_(blocksAgg[k].agg, false) });
     });
@@ -637,7 +648,7 @@ if (!startDate && !endDate) {
 function getCoordinationData(params) {
   params = params || {};
   var pessoa = params.pessoa;
-  var agrupamento = params.agrupamento === 'last6h' ? 'last6h' : 'day';
+  var agrupamento = (params.agrupamento === 'last6h' || params.agrupamento === 'last3h') ? params.agrupamento : 'day';
   var startDate = params.startDate;
   var endDate = params.endDate;
 
@@ -714,7 +725,8 @@ if (!startDate && !endDate) {
   var maxDate = endDate ? parseDate_(endDate) : null;
 
   var cutoffMs = null;
-  if (agrupamento === 'last6h') {
+  var rollingHours = agrupamento === 'last3h' ? 3 : (agrupamento === 'last6h' ? 6 : null);
+  if (rollingHours !== null) {
     var maxMsMatched = 0;
     rows.forEach(function(row){
       var d = parseDate_(row[col.date]);
@@ -723,13 +735,13 @@ if (!startDate && !endDate) {
       var ms = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, 0, 0, 0).getTime();
       if (ms > maxMsMatched) maxMsMatched = ms;
     });
-    if (maxMsMatched > 0) cutoffMs = maxMsMatched - (6 * 60 * 60 * 1000);
+    if (maxMsMatched > 0) cutoffMs = maxMsMatched - (rollingHours * 60 * 60 * 1000);
   }
 
   function rowDateOk_(row) {
     var d = parseDate_(row[col.date]);
     if (!d) return false;
-    if (agrupamento === 'last6h') {
+    if (rollingHours !== null) {
       if (cutoffMs === null) return false;
       var h = parseInt(row[col.hour], 10) || 0;
       var ms = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, 0, 0, 0).getTime();
@@ -867,9 +879,23 @@ if (!startDate && !endDate) {
     }
 
     var agg = blankAgg_();
+    var weightedEcpmSum = 0;
+    var requestWeightSum = 0;
     relevant.forEach(function(ms){
       var key = prefix + ms;
-      mergeAgg_(agg, bucketMap[key]);
+      var bucket = bucketMap[key];
+      if (!bucket) return;
+      mergeAgg_(agg, bucket);
+      var hourRequests = bucket.requests || 0;
+      if (hourRequests > 0) {
+        var hourImpressions = bucket.impressions || 0;
+        var hourRevenue = bucket.revenue || 0;
+        if (hourImpressions > 0) {
+          var hourEcpm = (hourRevenue * 1000) / hourImpressions;
+          weightedEcpmSum += hourEcpm * hourRequests;
+          requestWeightSum += hourRequests;
+        }
+      }
     });
 
     var metrics = finalizeAgg_(agg);
@@ -877,11 +903,13 @@ if (!startDate && !endDate) {
     var perdaUsuario = (agg.requests * (coverage / 100)) - agg.impressions;
     var correctedClicks = agg.clicks + Math.ceil(Math.max(0, perdaUsuario));
     var cpcCorrigido = correctedClicks > 0 ? (agg.revenue / correctedClicks) : 0;
+    var weightedEcpm = requestWeightSum > 0 ? (weightedEcpmSum / requestWeightSum) : metrics.ecpm;
 
     return {
       hasData: true,
       coverage: coverage,
       cpc: metrics.cpc || 0,
+      ecpm: weightedEcpm || 0,
       cpcCorrigido: cpcCorrigido,
       hoursUsed: relevant.map(formatHourLabel_)
     };

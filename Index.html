@@ -36,6 +36,10 @@
     tbody tr:hover { background-color: rgba(30, 41, 59, 0.6); }
     .pricing-table td, .pricing-table th { padding: 8px; }
     .pricing-table th { cursor: pointer; }
+    th[data-cfg-sort] { transition: color 0.15s ease-in-out; }
+    th[data-cfg-sort]:hover { color: #e2e8f0; }
+    th[data-cfg-sort]:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; color: #e2e8f0; }
+    .cfg-sort-indicator { color: inherit; font-size: 0.75rem; }
 
     #toast-container { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 50; display: flex; flex-direction: column; gap: 0.75rem; }
     .toast {
@@ -130,6 +134,7 @@
                 <select id="f-gran" class="w-full pill rounded-lg px-3 py-2 text-sm">
                   <option value="day">Dia (somatório)</option>
                   <option value="hour" selected>Por hora</option>
+                  <option value="last3h">Últimas 3 horas</option>
                   <option value="last6h">Últimas 6 horas</option>
                 </select>
               </div>
@@ -187,7 +192,54 @@
       </div>
       <div class="card rounded-2xl p-6">
         <h3 class="text-base font-bold text-slate-100 mb-3">Itens Configurados</h3>
-        <div class="overflow-auto"><table class="w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left font-semibold py-2 px-2">Pessoa</th><th class="text-left font-semibold py-2 px-2">Operação</th><th class="text-left font-semibold py-2 px-2">Página</th><th class="text-left font-semibold py-2 px-2">Parte</th><th class="text-left font-semibold py-2 px-2">Canal</th><th class="text-left font-semibold py-2 px-2">URLs</th><th class="text-left font-semibold py-2 px-2">Rede</th><th class="text-left font-semibold py-2 px-2">Moeda</th><th class="text-left font-semibold py-2 px-2">Ações</th></tr></thead><tbody id="cfg-list" class="align-top"></tbody></table></div>
+        <div class="space-y-3 mb-4">
+          <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Pessoa</label>
+              <select id="cfg-filter-pessoa" class="w-full pill rounded-lg px-3 py-2 text-sm">
+                <option value="">Todas</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Operação</label>
+              <select id="cfg-filter-operacao" class="w-full pill rounded-lg px-3 py-2 text-sm">
+                <option value="">Todas</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Parte</label>
+              <select id="cfg-filter-parte" class="w-full pill rounded-lg px-3 py-2 text-sm">
+                <option value="">Todas</option>
+                <option value="Quiz">Quiz</option>
+                <option value="P1">P1</option>
+                <option value="P2">P2</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Rede</label>
+              <select id="cfg-filter-rede" class="w-full pill rounded-lg px-3 py-2 text-sm">
+                <option value="">Todas</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Moeda</label>
+              <select id="cfg-filter-moeda" class="w-full pill rounded-lg px-3 py-2 text-sm">
+                <option value="">Todas</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 items-end">
+            <div class="lg:col-span-2">
+              <label class="block text-xs text-slate-400 mb-1">Busca rápida</label>
+              <input id="cfg-filter-search" type="text" class="w-full pill rounded-lg px-3 py-2 text-sm" placeholder="Filtrar por página, canal, URL..." />
+            </div>
+            <div class="flex justify-end">
+              <button id="cfg-filter-clear" type="button" class="pill px-4 py-2 rounded-xl text-sm">Limpar filtros</button>
+            </div>
+          </div>
+          <p id="cfg-list-count" class="text-xs text-slate-400">Carregando itens configurados...</p>
+        </div>
+        <div class="overflow-auto"><table class="w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left font-semibold py-2 px-2 cursor-pointer select-none" data-cfg-sort="pessoa" onclick="toggleCfgListSort('pessoa')" tabindex="0" role="button">Pessoa<span class="cfg-sort-indicator"></span></th><th class="text-left font-semibold py-2 px-2 cursor-pointer select-none" data-cfg-sort="operacao" onclick="toggleCfgListSort('operacao')" tabindex="0" role="button">Operação<span class="cfg-sort-indicator"></span></th><th class="text-left font-semibold py-2 px-2 cursor-pointer select-none" data-cfg-sort="pagina" onclick="toggleCfgListSort('pagina')" tabindex="0" role="button">Página<span class="cfg-sort-indicator"></span></th><th class="text-left font-semibold py-2 px-2 cursor-pointer select-none" data-cfg-sort="parte" onclick="toggleCfgListSort('parte')" tabindex="0" role="button">Parte<span class="cfg-sort-indicator"></span></th><th class="text-left font-semibold py-2 px-2 cursor-pointer select-none" data-cfg-sort="canal" onclick="toggleCfgListSort('canal')" tabindex="0" role="button">Canal<span class="cfg-sort-indicator"></span></th><th class="text-left font-semibold py-2 px-2">URLs</th><th class="text-left font-semibold py-2 px-2 cursor-pointer select-none" data-cfg-sort="rede" onclick="toggleCfgListSort('rede')" tabindex="0" role="button">Rede<span class="cfg-sort-indicator"></span></th><th class="text-left font-semibold py-2 px-2 cursor-pointer select-none" data-cfg-sort="moeda" onclick="toggleCfgListSort('moeda')" tabindex="0" role="button">Moeda<span class="cfg-sort-indicator"></span></th><th class="text-left font-semibold py-2 px-2">Ações</th></tr></thead><tbody id="cfg-list" class="align-top"></tbody></table></div>
       </div>
     </section>
 
@@ -206,6 +258,7 @@
             <label class="block text-sm font-medium text-slate-400 mb-1">Agrupamento</label>
             <select id="coord-agrupamento" class="w-full pill rounded-lg px-3 py-2 text-sm">
               <option value="day">Total do dia</option>
+              <option value="last3h">Últimas 3 horas</option>
               <option value="last6h">Últimas 6 horas</option>
             </select>
           </div>
@@ -219,6 +272,13 @@
   </div>
 
   <div id="toast-container"></div>
+
+  <div id="loading-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80">
+    <div class="flex flex-col items-center gap-4">
+      <div class="w-12 h-12 border-4 border-slate-200/40 border-t-sky-400 rounded-full animate-spin"></div>
+      <p id="loading-overlay-message" class="text-sm font-semibold text-slate-200">Carregando...</p>
+    </div>
+  </div>
 
   <div id="currency-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4">
     <div class="card w-full max-w-md rounded-2xl p-6 text-slate-200 border border-amber-500/40 bg-slate-900/80">
@@ -257,6 +317,24 @@
     function pct(n, d){ if(d===undefined) d=1; return num(n,d)+'%'; }
     function money(n, d){ if(d===undefined) d=2; return '$'+num(n,d); }
     function escapeHtml(str){ return String(str==null?'':str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+    function showLoading(message){
+        var overlay = byId('loading-overlay');
+        var label = byId('loading-overlay-message');
+        if (label) {
+            label.textContent = message || 'Carregando...';
+        }
+        if (overlay) {
+            overlay.classList.remove('hidden');
+        }
+    }
+
+    function hideLoading(){
+        var overlay = byId('loading-overlay');
+        if (overlay) {
+            overlay.classList.add('hidden');
+        }
+    }
 
 function todayIso(){
         var now = new Date();
@@ -513,13 +591,16 @@ function todayIso(){
         if (COORD.loading && !forceReload) return;
         COORD.loading = true;
         setCoordinationLoading('Carregando visão de coordenação...');
+        showLoading('Carregando visão de coordenação...');
         google.script.run
             .withSuccessHandler(function(res){
                 COORD.loading = false;
+                hideLoading();
                 renderCoordination(res || { operations: [] });
             })
             .withFailureHandler(function(err){
                 COORD.loading = false;
+                hideLoading();
                 renderCoordination({ operations: [], error: err && err.message ? err.message : 'Erro ao carregar os dados.' });
             })
             .getCoordinationData({ pessoa: pessoa, agrupamento: agrupamento });
@@ -852,6 +933,16 @@ function todayIso(){
             reason = 'Revisar valor de CPA antes de precificar';
         }
 
+        var basisEcpm = Number(basis.ecpm);
+        if (!isFinite(basisEcpm) || basisEcpm <= 0) {
+            var metricsEcpm = block && block.metrics ? Number(block.metrics.ecpm) : 0;
+            basisEcpm = isFinite(metricsEcpm) ? metricsEcpm : 0;
+        }
+        if (suggestion === 'Aumentar a regra' && basisEcpm >= 780) {
+            suggestion = 'Manter a regra';
+            reason = 'eCPM (' + money(basisEcpm) + ') acima do teto de $780';
+        }
+
         if (!suggestion) return 'Sem sugestão disponível';
         return suggestion + ' — ' + reason;
     }
@@ -899,6 +990,17 @@ function todayIso(){
     }
 
     var CFG = { rows: [], pessoas: [], opsByPessoa: {}, paginasByOp: {} };
+    var CFG_REDE_EMPTY_VALUE = '__empty__';
+    var CFG_PARTE_ORDER = { Quiz: 0, P1: 1, P2: 2 };
+    function createCfgListDefaults(){
+      return {
+        filters: { pessoa: '', operacao: '', parte: '', rede: '', moeda: '' },
+        search: '',
+        sortField: 'pessoa',
+        sortDir: 'asc'
+      };
+    }
+    var CFG_LIST_STATE = createCfgListDefaults();
     var LAST_RES = null;
     var SORT = { by: 'revenue', dir: 'desc' };
     var PRICING_SORT = {};
@@ -976,7 +1078,33 @@ function todayIso(){
       }
     })();
 
-    function loadConfig(){ google.script.run.withSuccessHandler(function(res){ CFG = res || {}; fillPessoa(res.pessoas || []); renderCfgTable(res.rows || []); }).getConfig(); }
+    function loadConfig(){
+      showLoading('Carregando configurações...');
+      google.script.run
+        .withSuccessHandler(function(res){
+          hideLoading();
+          var data = res || {};
+          CFG.rows = Array.isArray(data.rows) ? data.rows.slice() : [];
+          CFG.pessoas = Array.isArray(data.pessoas) ? data.pessoas.slice() : [];
+          CFG.opsByPessoa = data.opsByPessoa || {};
+          CFG.paginasByOp = data.paginasByOp || {};
+          for (var key in data) {
+            if (!data.hasOwnProperty(key)) continue;
+            if (key === 'rows' || key === 'pessoas' || key === 'opsByPessoa' || key === 'paginasByOp') continue;
+            CFG[key] = data[key];
+          }
+          fillPessoa(CFG.pessoas || []);
+          updateCfgFilterOptions();
+          applyCfgFilters();
+        })
+        .withFailureHandler(function(err){
+          hideLoading();
+          var message = err && err.message ? err.message : 'Não foi possível carregar as configurações da planilha.';
+          showToast(message, 'error');
+          applyCfgFilters();
+        })
+        .getConfig();
+    }
 
     // MODIFICADO: fillPessoa reescrito para usar os novos componentes de filtro
     function fillPessoa(list){
@@ -1435,7 +1563,18 @@ function todayIso(){
             showToast('Selecione Pessoa, Operação e pelo menos uma Página de Queda.', 'error'); 
             return; 
         }
-        google.script.run.withSuccessHandler(renderDashboard).getDashboardData(params);
+        showLoading('Carregando dados do dashboard...');
+        google.script.run
+          .withSuccessHandler(function(res){
+            hideLoading();
+            renderDashboard(res);
+          })
+          .withFailureHandler(function(err){
+            hideLoading();
+            var message = err && err.message ? err.message : 'Não foi possível carregar os dados do dashboard.';
+            showToast(message, 'error');
+          })
+          .getDashboardData(params);
       };
     }
 
@@ -1511,8 +1650,16 @@ function todayIso(){
       function tableFor(list){
         var rows = sortBlockEntries(list, BLOCK_SORT);
         if (!rows.length) return '';
+        var totals = { revenue:0, impressions:0, clicks:0, requests:0, ecpmWeight:0, coverageWeight:0 };
         var body = rows.map(function(r){
           var m = r.metrics || {};
+          var req = m.requests || 0;
+          totals.revenue += m.revenue || 0;
+          totals.impressions += m.impressions || 0;
+          totals.clicks += m.clicks || 0;
+          totals.requests += req;
+          if (req > 0 && typeof m.ecpm === 'number') totals.ecpmWeight += m.ecpm * req;
+          if (req > 0 && typeof m.coverage === 'number') totals.coverageWeight += m.coverage * req;
           return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/60">'
             + '<td class="py-2 pr-2">'+escapeHtml(r.page || '-')+'</td>'
             + '<td class="py-2 pr-2 text-right">'+money(m.revenue)+'</td>'
@@ -1525,6 +1672,21 @@ function todayIso(){
             + '<td class="py-2 pr-2 text-right">'+money(m.cpc,3)+'</td>'
             + '</tr>';
         }).join('');
+        var ctrTotal = totals.impressions > 0 ? (totals.clicks / totals.impressions) * 100 : 0;
+        var ecpmTotal = totals.requests > 0 ? (totals.ecpmWeight / totals.requests) : (totals.impressions > 0 ? (totals.revenue * 1000 / totals.impressions) : 0);
+        var coverageTotal = totals.requests > 0 ? (totals.coverageWeight / totals.requests) : 0;
+        var cpcTotal = totals.clicks > 0 ? (totals.revenue / totals.clicks) : 0;
+        var totalRow = '<tr class="border-t-2 border-slate-600 font-semibold bg-slate-800/40">'
+          + '<td class="py-2 pr-2">Total</td>'
+          + '<td class="py-2 pr-2 text-right">'+money(totals.revenue)+'</td>'
+          + '<td class="py-2 pr-2 text-right">'+num(totals.impressions,0)+'</td>'
+          + '<td class="py-2 pr-2 text-right">'+num(totals.clicks,0)+'</td>'
+          + '<td class="py-2 pr-2 text-right">'+pct(ctrTotal,2)+'</td>'
+          + '<td class="py-2 pr-2 text-right">'+money(ecpmTotal)+'</td>'
+          + '<td class="py-2 pr-2 text-right">'+num(totals.requests,0)+'</td>'
+          + '<td class="py-2 pr-2 text-right">'+pct(coverageTotal,2)+'</td>'
+          + '<td class="py-2 pr-2 text-right">'+money(cpcTotal,3)+'</td>'
+          + '</tr>';
         // MODIFICADO: Cabeçalhos da tabela agora são clicáveis para ordenação
         var head = '<thead class="text-slate-400"><tr>'
           + '<th class="text-left py-2 pr-2 cursor-pointer" onclick="sortByBlockHeader(\'page\')">Página'+blockSortIndicator('page')+'</th>'
@@ -1537,7 +1699,7 @@ function todayIso(){
           + '<th class="text-right py-2 pr-2 cursor-pointer" onclick="sortByBlockHeader(\'coverage\')">Cobertura'+blockSortIndicator('coverage')+'</th>'
           + '<th class="text-right py-2 pr-2 cursor-pointer" onclick="sortByBlockHeader(\'cpc\')">CPC'+blockSortIndicator('cpc')+'</th>'
           + '</tr></thead>';
-        return '<div class="overflow-auto"><table class="w-full text-sm">'+head+'<tbody>'+body+'</tbody></table></div>';
+        return '<div class="overflow-auto"><table class="w-full text-sm">'+head+'<tbody>'+body+totalRow+'</tbody></table></div>';
       }
 
       function sectionHtml(partKey, title, borderClass, textClass){
@@ -1655,12 +1817,13 @@ function todayIso(){
     }
     
     function renderDashboard(res){
+      hideLoading();
       LAST_RES = res;
       LAST_RES.pricingRulesAdSeleto = res.pricingRulesAdSeleto || [];
       LAST_RES.pricingRulesIgoal = res.pricingRulesIgoal || [];
       var hostA = byId('analysis-content'), hostC = byId('compare-content');
       hostA.innerHTML = ''; hostC.innerHTML = '';
-      var hourly = (res.granularity === 'hour' || res.granularity === 'last6h');
+      var hourly = (res.granularity === 'hour' || res.granularity === 'last3h' || res.granularity === 'last6h');
       
       res.pages.forEach(function(pg) {
         var total = pg.total || {};
@@ -1708,7 +1871,36 @@ function todayIso(){
         }
       });
       
-      if(res.compare&&res.compare.length){var cmp=document.createElement('div');cmp.className='card rounded-2xl p-5';cmp.innerHTML='<h3 class="text-lg font-bold mb-3">Comparativo — Total da Página</h3><div class="overflow-auto"><table class="w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left py-2 pr-2">Página</th><th class="text-right py-2 pr-2">Receita</th><th class="text-right py-2 pr-2">Impressões</th><th class="text-right py-2 pr-2">Cliques</th><th class="text-right py-2 pr-2">CTR</th><th class="text-right py-2 pr-2">eCPM</th><th class="text-right py-2 pr-2">CPC</th><th class="text-right py-2 pr-2">CPC Corrigido</th><th class="text-right py-2 pr-2">RPS</th><th class="text-right py-2 pr-2">Taxa de interação</th></tr></thead><tbody>'+res.compare.map(function(r){var cpcDisplay=(typeof r.cpcP1P2==='number')?r.cpcP1P2:r.cpc;return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/60"><td class="py-2 pr-2">'+r.page+'</td><td class="py-2 pr-2 text-right">'+money(r.revenue)+'</td><td class="py-2 pr-2 text-right">'+num(r.impressions,0)+'</td><td class="py-2 pr-2 text-right">'+num(r.clicks,0)+'</td><td class="py-2 pr-2 text-right">'+pct(r.ctr,2)+'</td><td class="py-2 pr-2 text-right">'+money(r.ecpm)+'</td><td class="py-2 pr-2 text-right">'+money(cpcDisplay,3)+'</td><td class="py-2 pr-2 text-right">'+money(r.cpcCorrigido,3)+'</td><td class="py-2 pr-2 text-right">'+money(r.rps)+'</td><td class="py-2 pr-2 text-right">'+pct(r.interactionRate)+'</td></tr>';}).join('')+'</tbody></table></div>';hostC.appendChild(cmp);}
+      if(res.compare&&res.compare.length){
+        var cmp=document.createElement('div');
+        cmp.className='card rounded-2xl p-5';
+        var totals={revenue:0,impressions:0,clicks:0,requests:0,revenueP1P2:0,clicksP1P2:0,reqP1Interstitial:0,ecpmWeight:0,weightSum:0};
+        var rowsHtml=res.compare.map(function(r){
+          var cpcDisplay=(typeof r.cpcP1P2==='number')?r.cpcP1P2:r.cpc;
+          var req=r.requests||0;
+          var reqInt=typeof r.reqP1Interstitial==='number'?r.reqP1Interstitial:0;
+          var revP1P2=(typeof r.revenueP1P2==='number')?r.revenueP1P2:r.revenue;
+          var clkP1P2=(typeof r.clicksP1P2==='number')?r.clicksP1P2:r.clicks;
+          totals.revenue+=r.revenue||0;
+          totals.impressions+=r.impressions||0;
+          totals.clicks+=r.clicks||0;
+          totals.requests+=req;
+          totals.revenueP1P2+=revP1P2||0;
+          totals.clicksP1P2+=clkP1P2||0;
+          totals.reqP1Interstitial+=reqInt;
+          if(req>0 && typeof r.ecpm==='number'){totals.ecpmWeight+=r.ecpm*req;totals.weightSum+=req;}
+          return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/60"><td class="py-2 pr-2">'+r.page+'</td><td class="py-2 pr-2 text-right">'+money(r.revenue)+'</td><td class="py-2 pr-2 text-right">'+num(r.impressions,0)+'</td><td class="py-2 pr-2 text-right">'+num(r.clicks,0)+'</td><td class="py-2 pr-2 text-right">'+pct(r.ctr,2)+'</td><td class="py-2 pr-2 text-right">'+money(r.ecpm)+'</td><td class="py-2 pr-2 text-right">'+money(cpcDisplay,3)+'</td><td class="py-2 pr-2 text-right">'+money(r.cpcCorrigido,3)+'</td><td class="py-2 pr-2 text-right">'+money(r.rps)+'</td><td class="py-2 pr-2 text-right">'+pct(r.interactionRate)+'</td></tr>';
+        }).join('');
+        var ctrTotal=totals.impressions>0?(totals.clicks/totals.impressions)*100:0;
+        var ecpmTotal=totals.weightSum>0?(totals.ecpmWeight/totals.weightSum):(totals.impressions>0?(totals.revenue*1000/totals.impressions):0);
+        var cpcTotal=totals.clicks>0?(totals.revenue/totals.clicks):0;
+        var interactionRateTotal=totals.reqP1Interstitial>0?(totals.clicksP1P2/totals.reqP1Interstitial)*100:0;
+        var rpsTotal=totals.reqP1Interstitial>0?(totals.revenueP1P2/totals.reqP1Interstitial)*1000:0;
+        var cpcCorrigidoTotal=cpcTotal*(interactionRateTotal/100);
+        var totalRow='<tr class="border-t-2 border-slate-600 font-semibold bg-slate-800/40"><td class="py-2 pr-2">Total</td><td class="py-2 pr-2 text-right">'+money(totals.revenue)+'</td><td class="py-2 pr-2 text-right">'+num(totals.impressions,0)+'</td><td class="py-2 pr-2 text-right">'+num(totals.clicks,0)+'</td><td class="py-2 pr-2 text-right">'+pct(ctrTotal,2)+'</td><td class="py-2 pr-2 text-right">'+money(ecpmTotal)+'</td><td class="py-2 pr-2 text-right">'+money(cpcTotal,3)+'</td><td class="py-2 pr-2 text-right">'+money(cpcCorrigidoTotal,3)+'</td><td class="py-2 pr-2 text-right">'+money(rpsTotal)+'</td><td class="py-2 pr-2 text-right">'+pct(interactionRateTotal,2)+'</td></tr>';
+        cmp.innerHTML='<h3 class="text-lg font-bold mb-3">Comparativo — Total da Página</h3><div class="overflow-auto"><table class="w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left py-2 pr-2">Página</th><th class="text-right py-2 pr-2">Receita</th><th class="text-right py-2 pr-2">Impressões</th><th class="text-right py-2 pr-2">Cliques</th><th class="text-right py-2 pr-2">CTR</th><th class="text-right py-2 pr-2">eCPM</th><th class="text-right py-2 pr-2">CPC</th><th class="text-right py-2 pr-2">CPC Corrigido</th><th class="text-right py-2 pr-2">RPS</th><th class="text-right py-2 pr-2">Taxa de interação</th></tr></thead><tbody>'+rowsHtml+totalRow+'</tbody></table></div>';
+        hostC.appendChild(cmp);
+      }
       var chartBox=document.createElement('div');chartBox.className='card rounded-2xl p-5';chartBox.innerHTML='<div class="flex items-center justify-between gap-4 flex-wrap"><h3 class="text-lg font-bold">Evolução por Hora</h3><div class="flex items-center gap-4 text-sm flex-wrap"><div class="flex items-center gap-2"><label for="cmp-block" class="text-slate-300">Bloco:</label><select id="cmp-block" class="pill rounded-lg px-3 py-1.5"><option value="Total" selected>Total</option><option value="mob_top (P1)">mob_top (P1)</option><option value="mob_interstitial (P1)">mob_interstitial (P1)</option><option value="mob_offerwall (P2)">mob_offerwall (P2)</option><option value="mob_top (P2)">mob_top (P2)</option><option value="rewarded (Quiz)">rewarded (Quiz)</option></select></div><div class="flex items-center gap-2"><label for="cmp-metric" class="text-slate-300">Métrica:</label><select id="cmp-metric" class="pill rounded-lg px-3 py-1.5"><option value="rps" selected>RPS</option><option value="cpc">CPC</option><option value="interactionRate">Taxa de interação</option><option value="ecpm">eCPM</option><option value="coverage">Cobertura</option><option value="effectiveEcpm">eCPM Efetivo</option></select></div></div></div><div class="relative w-full h-96 mt-4"><canvas id="cmp-canvas"></canvas></div>'+(!res.seriesChart||!res.seriesChart.length?'<div class="text-slate-400 text-sm mt-2">Sem dados suficientes para o gráfico.</div>':'');hostC.appendChild(chartBox);
       if(res.seriesChart&&res.seriesChart.length){function redraw(){setupCompareChart(LAST_RES);}byId('cmp-metric').onchange=redraw;byId('cmp-block').onchange=redraw;redraw();}
       if(res.compareBlocks && res.compareBlocks.length){
@@ -1737,12 +1929,12 @@ function todayIso(){
       }
       
       function getAggregatedMetrics(details, blockIdentifier) {
-          let agg = { impressions: 0, clicks: 0, revenue: 0, requests: 0, cpcCorrigidoSum: 0, cpcCorrigidoCount: 0, coverage_w_sum: 0, weight_w_sum: 0 };
+          let agg = { impressions: 0, clicks: 0, revenue: 0, requests: 0, cpcCorrigidoSum: 0, cpcCorrigidoCount: 0, coverage_w_sum: 0, weight_w_sum: 0, ecpmWeightedSum: 0, requestsForEcpm: 0 };
           let found = false;
           details.forEach(function(d) {
               if (String(d.adunit).toLowerCase().includes(blockIdentifier)) {
                   const m = d.metrics;
-                  const weight = m.requests;
+                  const weight = Number(m.requests) || 0;
                   agg.impressions += m.impressions;
                   agg.clicks += m.clicks;
                   agg.revenue += m.revenue;
@@ -1756,6 +1948,11 @@ function todayIso(){
                       agg.cpcCorrigidoSum += m.cpcCorrigido * m.clicks;
                       agg.cpcCorrigidoCount += m.clicks;
                   }
+                  if (weight > 0 && m.impressions > 0) {
+                      const hourEcpm = (m.revenue * 1000) / m.impressions;
+                      agg.ecpmWeightedSum += hourEcpm * weight;
+                      agg.requestsForEcpm += weight;
+                  }
                   found = true;
               }
           });
@@ -1763,8 +1960,19 @@ function todayIso(){
           return {
               cpc: agg.clicks > 0 ? agg.revenue / agg.clicks : 0,
               coverage: agg.weight_w_sum > 0 ? (agg.coverage_w_sum / agg.weight_w_sum) * 100 : 0,
-              cpcCorrigido: agg.cpcCorrigidoCount > 0 ? agg.cpcCorrigidoSum / agg.cpcCorrigidoCount : 0
+              cpcCorrigido: agg.cpcCorrigidoCount > 0 ? agg.cpcCorrigidoSum / agg.cpcCorrigidoCount : 0,
+              ecpm: agg.requestsForEcpm > 0 ? (agg.ecpmWeightedSum / agg.requestsForEcpm) : (agg.impressions > 0 ? (agg.revenue * 1000) / agg.impressions : 0)
           };
+      }
+
+      function applyEcpmCap(suggestion, reason, ecpmValue) {
+        if (suggestion === 'Aumentar a regra' && ecpmValue >= 780) {
+          return {
+            suggestion: 'Manter a regra',
+            reason: 'eCPM (' + money(ecpmValue) + ') acima do teto de $780'
+          };
+        }
+        return { suggestion: suggestion, reason: reason };
       }
       
       function generateCard(title, suggestion, reason, data) {
@@ -1785,7 +1993,8 @@ function todayIso(){
           else if (mobTop.coverage < 30) { sugg = 'Reduzir a regra'; reason = 'Cobertura < 30%'; }
           else if (mobTop.cpc < cpcAlvo) { sugg = 'Aumentar a regra'; reason = 'Cobertura (30-80%) e CPC < Alvo'; }
           else { sugg = 'Manter a regra'; reason = 'Cobertura (30-80%) e CPC >= Alvo'; }
-          suggestionsHtml += generateCard('P1: mob_top', sugg, reason, { [periodLabel]: periodValue, Cobertura: pct(mobTop.coverage, 2), CPC: money(mobTop.cpc, 3), 'Alvo': money(cpcAlvo, 3) });
+          var adjusted = applyEcpmCap(sugg, reason, mobTop.ecpm);
+          suggestionsHtml += generateCard('P1: mob_top', adjusted.suggestion, adjusted.reason, { [periodLabel]: periodValue, Cobertura: pct(mobTop.coverage, 2), CPC: money(mobTop.cpc, 3), 'Alvo': money(cpcAlvo, 3), 'eCPM': money(mobTop.ecpm) });
         }
         const mobInterstitial = getAggregatedMetrics(filteredDetails, 'mob_interstitial');
         if (mobInterstitial) {
@@ -1794,7 +2003,8 @@ function todayIso(){
           else if (mobInterstitial.coverage < 80) { sugg = 'Reduzir a regra'; reason = 'Cobertura < 80%'; }
           else if (mobInterstitial.cpc < cpcAlvo) { sugg = 'Aumentar a regra'; reason = 'Cobertura (>80%) e CPC < Alvo'; }
           else { sugg = 'Manter a regra'; reason = 'Cobertura (80-95%) e CPC >= Alvo'; }
-          suggestionsHtml += generateCard('P1: mob_interstitial', sugg, reason, { [periodLabel]: periodValue, Cobertura: pct(mobInterstitial.coverage, 2), CPC: money(mobInterstitial.cpc, 3), 'Alvo': money(cpcAlvo, 3) });
+          var adjustedInterstitial = applyEcpmCap(sugg, reason, mobInterstitial.ecpm);
+          suggestionsHtml += generateCard('P1: mob_interstitial', adjustedInterstitial.suggestion, adjustedInterstitial.reason, { [periodLabel]: periodValue, Cobertura: pct(mobInterstitial.coverage, 2), CPC: money(mobInterstitial.cpc, 3), 'Alvo': money(cpcAlvo, 3), 'eCPM': money(mobInterstitial.ecpm) });
         }
       } else if (partData.parte === 'P2') {
         const mobTopP2 = getAggregatedMetrics(filteredDetails, 'mob_top');
@@ -1803,14 +2013,16 @@ function todayIso(){
           if (mobTopP2.coverage > 80) { sugg = 'Aumentar a regra'; reason = 'Cobertura > 80% (Meta 75%)'; }
           else if (mobTopP2.coverage < 70) { sugg = 'Reduzir a regra'; reason = 'Cobertura < 70% (Meta 75%)'; }
           else { sugg = 'Manter a regra'; reason = 'Cobertura na margem (70-80%)'; }
-          suggestionsHtml += generateCard('P2: mob_top', sugg, reason, { [periodLabel]: periodValue, Cobertura: pct(mobTopP2.coverage, 2) });
+          var adjustedP2Top = applyEcpmCap(sugg, reason, mobTopP2.ecpm);
+          suggestionsHtml += generateCard('P2: mob_top', adjustedP2Top.suggestion, adjustedP2Top.reason, { [periodLabel]: periodValue, Cobertura: pct(mobTopP2.coverage, 2), 'eCPM': money(mobTopP2.ecpm) });
         }
         const offerwall = getAggregatedMetrics(filteredDetails, 'offerwall') || getAggregatedMetrics(filteredDetails, 'rewarded');
         if (offerwall && mobTopP2) {
           let sugg = '', reason = '';
           if (offerwall.cpcCorrigido < mobTopP2.cpc) { sugg = 'Aumentar a regra'; reason = 'CPC Corrigido < CPC mob_top P2'; }
           else { sugg = 'Manter a regra'; reason = 'CPC Corrigido >= CPC mob_top P2'; }
-          suggestionsHtml += generateCard('P2: offerwall/rewarded', sugg, reason, { [periodLabel]: periodValue, 'CPC Corrigido': money(offerwall.cpcCorrigido, 3), 'CPC mob_top P2': money(mobTopP2.cpc, 3) });
+          var adjustedOfferwall = applyEcpmCap(sugg, reason, offerwall.ecpm);
+          suggestionsHtml += generateCard('P2: offerwall/rewarded', adjustedOfferwall.suggestion, adjustedOfferwall.reason, { [periodLabel]: periodValue, 'CPC Corrigido': money(offerwall.cpcCorrigido, 3), 'CPC mob_top P2': money(mobTopP2.cpc, 3), 'eCPM': money(offerwall.ecpm) });
         }
       } else if (partData.parte === 'Quiz') {
         const rewarded = getAggregatedMetrics(filteredDetails, 'rewarded');
@@ -2230,9 +2442,319 @@ function todayIso(){
     }
 
     function renderCfgTable(rows){
-      var tb=byId('cfg-list');
-      tb.innerHTML=rows.map(function(r){return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/60 align-top"><td class="py-2 px-2">'+r.pessoa+'</td><td class="py-2 px-2">'+r.operacao+'</td><td class="py-2 px-2">'+r.pagina+'</td><td class="py-2 px-2">'+r.parte+'</td><td class="py-2 px-2">'+r.canal+'</td><td class="py-2 px-2">'+(r.urls||[]).join('; ')+'</td><td class="py-2 px-2">'+(r.rede||'-')+'</td><td class="py-2 px-2">'+(r.moeda||'USD')+'</td>'+
-      '<td class="py-2 px-2 whitespace-nowrap"><button type="button" class="text-sky-400 hover:text-sky-300 text-xs font-semibold mr-3" onclick="editCfgItem(\''+r.id+'\')">Editar</button><button type="button" class="text-rose-400 hover:text-rose-300 text-xs font-semibold" onclick="deleteCfgItem(\''+r.id+'\')">Apagar</button></td></tr>';}).join('');
+      var tb = byId('cfg-list');
+      if (!tb) return;
+      var list = Array.isArray(rows) ? rows : [];
+      var total = Array.isArray(CFG.rows) ? CFG.rows.length : 0;
+      if (!list.length) {
+        var message = total ? 'Nenhum item encontrado com os filtros atuais.' : 'Nenhuma configuração cadastrada.';
+        tb.innerHTML = '<tr><td colspan="9" class="py-4 px-2 text-center text-slate-400">'+escapeHtml(message)+'</td></tr>';
+      } else {
+        tb.innerHTML = list.map(function(r){
+          var pessoa = escapeHtml(r.pessoa || '');
+          var operacao = escapeHtml(r.operacao || '');
+          var pagina = escapeHtml(r.pagina || '');
+          var parte = escapeHtml(r.parte || '');
+          var canal = escapeHtml(r.canal || '');
+          var urlsSource;
+          if (Array.isArray(r.urls)) { urlsSource = r.urls.slice(); }
+          else if (typeof r.urls === 'string' && r.urls) { urlsSource = r.urls.split(';').map(function(u){ return u.trim(); }); }
+          else { urlsSource = []; }
+          var urls = urlsSource.filter(function(u){ return u; }).map(function(u){ return escapeHtml(u); }).join('; ');
+          var rede = r.rede ? escapeHtml(r.rede) : '-';
+          var moeda = r.moeda ? escapeHtml(r.moeda) : 'USD';
+          var safeId = String(r.id || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+          return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/60 align-top">'
+            + '<td class="py-2 px-2">'+pessoa+'</td>'
+            + '<td class="py-2 px-2">'+operacao+'</td>'
+            + '<td class="py-2 px-2">'+pagina+'</td>'
+            + '<td class="py-2 px-2">'+parte+'</td>'
+            + '<td class="py-2 px-2">'+(canal || '-')+'</td>'
+            + '<td class="py-2 px-2">'+(urls || '—')+'</td>'
+            + '<td class="py-2 px-2">'+rede+'</td>'
+            + '<td class="py-2 px-2">'+moeda+'</td>'
+            + '<td class="py-2 px-2 whitespace-nowrap">'
+            +   '<button type="button" class="text-sky-400 hover:text-sky-300 text-xs font-semibold mr-3" onclick="editCfgItem(\''+safeId+'\')">Editar</button>'
+            +   '<button type="button" class="text-rose-400 hover:text-rose-300 text-xs font-semibold" onclick="deleteCfgItem(\''+safeId+'\')">Apagar</button>'
+            + '</td>'
+          + '</tr>';
+        }).join('');
+      }
+      var counter = byId('cfg-list-count');
+      if (counter) {
+        if (!total) {
+          counter.textContent = 'Nenhuma configuração cadastrada.';
+        } else if (list.length === total) {
+          counter.textContent = 'Exibindo '+list.length+' de '+total+' itens.';
+        } else {
+          counter.textContent = 'Exibindo '+list.length+' de '+total+' itens após filtros.';
+        }
+      }
+      updateCfgSortIndicators();
+    }
+
+    function uniqueSortedStrings(list){
+      var seen = {};
+      var out = [];
+      (list || []).forEach(function(item){
+        var value = (item == null) ? '' : String(item);
+        if (!seen.hasOwnProperty(value)) {
+          seen[value] = true;
+          out.push(value);
+        }
+      });
+      out.sort(function(a, b){ return a.localeCompare(b, 'pt-BR'); });
+      return out;
+    }
+
+    function updateCfgOperationFilterOptions(){
+      var select = byId('cfg-filter-operacao');
+      if (!select) return;
+      var pessoa = (CFG_LIST_STATE.filters && CFG_LIST_STATE.filters.pessoa) || '';
+      var ops = [];
+      if (pessoa && CFG.opsByPessoa && CFG.opsByPessoa[pessoa]) {
+        ops = (CFG.opsByPessoa[pessoa] || []).slice();
+      } else {
+        ops = (Array.isArray(CFG.rows) ? CFG.rows : []).map(function(row){ return row && row.operacao ? row.operacao : ''; });
+      }
+      ops = uniqueSortedStrings(ops.filter(function(op){ return op; }));
+      var current = (CFG_LIST_STATE.filters && CFG_LIST_STATE.filters.operacao) || '';
+      if (current && ops.indexOf(current) === -1) current = '';
+      if (CFG_LIST_STATE.filters) CFG_LIST_STATE.filters.operacao = current;
+      select.innerHTML = '<option value="">Todas</option>' + ops.map(function(op){ return '<option value="'+escapeHtml(op)+'">'+escapeHtml(op)+'</option>'; }).join('');
+      select.value = current;
+      var disable = !!pessoa && !ops.length;
+      select.disabled = disable;
+      select.classList.toggle('opacity-50', disable);
+    }
+
+    function updateCfgFilterOptions(){
+      var rows = Array.isArray(CFG.rows) ? CFG.rows : [];
+      var pessoaSelect = byId('cfg-filter-pessoa');
+      if (pessoaSelect) {
+        var pessoas = (CFG.pessoas && CFG.pessoas.length) ? CFG.pessoas.slice() : rows.map(function(row){ return row && row.pessoa ? row.pessoa : ''; });
+        pessoas = uniqueSortedStrings(pessoas.filter(function(p){ return p; }));
+        var currentPessoa = (CFG_LIST_STATE.filters && CFG_LIST_STATE.filters.pessoa) || '';
+        if (currentPessoa && pessoas.indexOf(currentPessoa) === -1) currentPessoa = '';
+        if (CFG_LIST_STATE.filters) CFG_LIST_STATE.filters.pessoa = currentPessoa;
+        pessoaSelect.innerHTML = '<option value="">Todas</option>' + pessoas.map(function(p){ return '<option value="'+escapeHtml(p)+'">'+escapeHtml(p)+'</option>'; }).join('');
+        pessoaSelect.value = currentPessoa;
+      }
+
+      updateCfgOperationFilterOptions();
+
+      var parteSelect = byId('cfg-filter-parte');
+      if (parteSelect && CFG_LIST_STATE.filters) {
+        parteSelect.value = CFG_LIST_STATE.filters.parte || '';
+      }
+
+      var redeSelect = byId('cfg-filter-rede');
+      if (redeSelect) {
+        var redes = [];
+        var hasEmpty = false;
+        rows.forEach(function(row){
+          if (!row) return;
+          var value = row.rede == null ? '' : String(row.rede).trim();
+          if (!value) { hasEmpty = true; return; }
+          if (redes.indexOf(value) === -1) redes.push(value);
+        });
+        redes.sort(function(a, b){ return a.localeCompare(b, 'pt-BR'); });
+        var redeOptions = '<option value="">Todas</option>';
+        if (hasEmpty) redeOptions += '<option value="'+CFG_REDE_EMPTY_VALUE+'">Sem rede</option>';
+        redeOptions += redes.map(function(rede){ return '<option value="'+escapeHtml(rede)+'">'+escapeHtml(rede)+'</option>'; }).join('');
+        redeSelect.innerHTML = redeOptions;
+        var currentRede = (CFG_LIST_STATE.filters && CFG_LIST_STATE.filters.rede) || '';
+        if (currentRede === CFG_REDE_EMPTY_VALUE && !hasEmpty) currentRede = '';
+        else if (currentRede && currentRede !== CFG_REDE_EMPTY_VALUE && redes.indexOf(currentRede) === -1) currentRede = '';
+        if (CFG_LIST_STATE.filters) CFG_LIST_STATE.filters.rede = currentRede;
+        redeSelect.value = currentRede;
+      }
+
+      var moedaSelect = byId('cfg-filter-moeda');
+      if (moedaSelect) {
+        var moedas = [];
+        rows.forEach(function(row){
+          if (!row) return;
+          var value = row.moeda == null ? '' : String(row.moeda).trim();
+          if (!value) return;
+          value = value.toUpperCase();
+          if (moedas.indexOf(value) === -1) moedas.push(value);
+        });
+        moedas.sort(function(a, b){ return a.localeCompare(b, 'pt-BR'); });
+        moedaSelect.innerHTML = '<option value="">Todas</option>' + moedas.map(function(m){ return '<option value="'+escapeHtml(m)+'">'+escapeHtml(m)+'</option>'; }).join('');
+        var currentMoeda = (CFG_LIST_STATE.filters && CFG_LIST_STATE.filters.moeda) || '';
+        if (currentMoeda && moedas.indexOf(currentMoeda) === -1) currentMoeda = '';
+        if (CFG_LIST_STATE.filters) CFG_LIST_STATE.filters.moeda = currentMoeda;
+        moedaSelect.value = currentMoeda;
+      }
+
+      var searchInput = byId('cfg-filter-search');
+      if (searchInput) searchInput.value = CFG_LIST_STATE.search || '';
+      updateCfgSortIndicators();
+    }
+
+    function getCfgSortValue(row, field){
+      if (!row) return '';
+      var value = '';
+      switch(field){
+        case 'operacao': value = row.operacao; break;
+        case 'pagina': value = row.pagina; break;
+        case 'parte':
+          var parte = row.parte || '';
+          var order = CFG_PARTE_ORDER.hasOwnProperty(parte) ? CFG_PARTE_ORDER[parte] : 9;
+          return String(order).padStart(2, '0') + parte.toLowerCase();
+        case 'canal': value = row.canal; break;
+        case 'rede': value = row.rede; break;
+        case 'moeda': value = row.moeda ? String(row.moeda).toUpperCase() : ''; break;
+        default: value = row.pessoa; break;
+      }
+      return String(value == null ? '' : value).toLowerCase();
+    }
+
+    function toggleCfgListSort(field){
+      if (!field) return;
+      if (CFG_LIST_STATE.sortField === field) {
+        CFG_LIST_STATE.sortDir = CFG_LIST_STATE.sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        CFG_LIST_STATE.sortField = field;
+        CFG_LIST_STATE.sortDir = 'asc';
+      }
+      applyCfgFilters();
+    }
+    window.toggleCfgListSort = toggleCfgListSort;
+
+    function updateCfgSortIndicators(){
+      var headers = document.querySelectorAll('[data-cfg-sort]');
+      headers.forEach(function(th){
+        var field = th.getAttribute('data-cfg-sort');
+        var indicator = th.querySelector('.cfg-sort-indicator');
+        if (CFG_LIST_STATE.sortField === field) {
+          var ascending = CFG_LIST_STATE.sortDir !== 'desc';
+          if (indicator) indicator.textContent = ascending ? ' ▲' : ' ▼';
+          th.setAttribute('aria-sort', ascending ? 'ascending' : 'descending');
+        } else {
+          if (indicator) indicator.textContent = '';
+          th.setAttribute('aria-sort', 'none');
+        }
+      });
+    }
+
+    function applyCfgFilters(){
+      var rows = Array.isArray(CFG.rows) ? CFG.rows.slice() : [];
+      var filters = CFG_LIST_STATE.filters || {};
+      var searchTerm = (CFG_LIST_STATE.search || '').trim().toLowerCase();
+      var filtered = rows.filter(function(row){
+        if (!row) return false;
+        if (filters.pessoa && row.pessoa !== filters.pessoa) return false;
+        if (filters.operacao && row.operacao !== filters.operacao) return false;
+        if (filters.parte && row.parte !== filters.parte) return false;
+        if (filters.rede) {
+          if (filters.rede === CFG_REDE_EMPTY_VALUE) {
+            if ((row.rede || '').trim()) return false;
+          } else if ((row.rede || '').trim() !== filters.rede) return false;
+        }
+        if (filters.moeda && String(row.moeda || '').toUpperCase() !== filters.moeda) return false;
+        if (searchTerm) {
+          var haystack = [row.pessoa, row.operacao, row.pagina, row.parte, row.canal, (row.urls || []).join ? (row.urls || []).join(' ') : row.urls, row.rede, row.moeda]
+            .map(function(value){ return (value == null ? '' : String(value)).toLowerCase(); })
+            .join(' ');
+          if (haystack.indexOf(searchTerm) === -1) return false;
+        }
+        return true;
+      });
+
+      var sortField = CFG_LIST_STATE.sortField || 'pessoa';
+      var dir = CFG_LIST_STATE.sortDir === 'desc' ? -1 : 1;
+      filtered.sort(function(a, b){
+        var valA = getCfgSortValue(a, sortField);
+        var valB = getCfgSortValue(b, sortField);
+        var cmp = valA.localeCompare(valB, 'pt-BR');
+        if (cmp !== 0) return cmp * dir;
+        var fallbackPessoa = getCfgSortValue(a, 'pessoa').localeCompare(getCfgSortValue(b, 'pessoa'), 'pt-BR');
+        if (fallbackPessoa !== 0) return fallbackPessoa;
+        return getCfgSortValue(a, 'pagina').localeCompare(getCfgSortValue(b, 'pagina'), 'pt-BR');
+      });
+
+      renderCfgTable(filtered);
+    }
+
+    function resetCfgListFilters(){
+      CFG_LIST_STATE = createCfgListDefaults();
+      updateCfgFilterOptions();
+      applyCfgFilters();
+    }
+
+    function setupCfgListControls(){
+      var pessoaSelect = byId('cfg-filter-pessoa');
+      if (pessoaSelect) {
+        pessoaSelect.addEventListener('change', function(){
+          if (!CFG_LIST_STATE.filters) CFG_LIST_STATE.filters = {};
+          CFG_LIST_STATE.filters.pessoa = this.value || '';
+          CFG_LIST_STATE.filters.operacao = '';
+          updateCfgOperationFilterOptions();
+          applyCfgFilters();
+        });
+      }
+
+      var operacaoSelect = byId('cfg-filter-operacao');
+      if (operacaoSelect) {
+        operacaoSelect.addEventListener('change', function(){
+          if (!CFG_LIST_STATE.filters) CFG_LIST_STATE.filters = {};
+          CFG_LIST_STATE.filters.operacao = this.value || '';
+          applyCfgFilters();
+        });
+      }
+
+      var parteSelect = byId('cfg-filter-parte');
+      if (parteSelect) {
+        parteSelect.addEventListener('change', function(){
+          if (!CFG_LIST_STATE.filters) CFG_LIST_STATE.filters = {};
+          CFG_LIST_STATE.filters.parte = this.value || '';
+          applyCfgFilters();
+        });
+      }
+
+      var redeSelect = byId('cfg-filter-rede');
+      if (redeSelect) {
+        redeSelect.addEventListener('change', function(){
+          if (!CFG_LIST_STATE.filters) CFG_LIST_STATE.filters = {};
+          CFG_LIST_STATE.filters.rede = this.value || '';
+          applyCfgFilters();
+        });
+      }
+
+      var moedaSelect = byId('cfg-filter-moeda');
+      if (moedaSelect) {
+        moedaSelect.addEventListener('change', function(){
+          if (!CFG_LIST_STATE.filters) CFG_LIST_STATE.filters = {};
+          CFG_LIST_STATE.filters.moeda = this.value || '';
+          applyCfgFilters();
+        });
+      }
+
+      var searchInput = byId('cfg-filter-search');
+      if (searchInput) {
+        searchInput.addEventListener('input', function(){
+          CFG_LIST_STATE.search = this.value || '';
+          applyCfgFilters();
+        });
+      }
+
+      var clearButton = byId('cfg-filter-clear');
+      if (clearButton) {
+        clearButton.addEventListener('click', function(){ resetCfgListFilters(); });
+      }
+
+      updateCfgFilterOptions();
+
+      document.querySelectorAll('[data-cfg-sort]').forEach(function(th){
+        th.addEventListener('keydown', function(evt){
+          if (evt.key === 'Enter' || evt.key === ' ') {
+            evt.preventDefault();
+            toggleCfgListSort(th.getAttribute('data-cfg-sort'));
+          }
+        });
+      });
     }
 
     function editCfgItem(id) {
@@ -2251,11 +2773,20 @@ function todayIso(){
     }
 
     function deleteCfgItem(id) {
-        if (confirm('Tem certeza que deseja apagar este item?')) { 
-            google.script.run.withSuccessHandler(function() {
-                showToast('Item apagado com sucesso!', 'success');
-                loadConfig();
-            }).deleteConfig(id);
+        if (confirm('Tem certeza que deseja apagar este item?')) {
+            showLoading('Removendo configuração...');
+            google.script.run
+                .withSuccessHandler(function() {
+                    hideLoading();
+                    showToast('Item apagado com sucesso!', 'success');
+                    loadConfig();
+                })
+                .withFailureHandler(function(err){
+                    hideLoading();
+                    var message = err && err.message ? err.message : 'Não foi possível apagar o item.';
+                    showToast(message, 'error');
+                })
+                .deleteConfig(id);
         }
     }
 
@@ -2266,11 +2797,20 @@ function todayIso(){
         var payload={id:byId('cfg-id').value,pessoa:(byId('cfg-pessoa').value||'').trim(),operacao:(byId('cfg-operacao').value||'').trim(),pagina:(byId('cfg-pagina').value||'').trim(),parte:(byId('cfg-parte').value||'').trim(),canal:(byId('cfg-canal').value||'').trim(),urls:(byId('cfg-urls').value||'').trim(),rede:(byId('cfg-rede').value||'').trim(),moeda:(byId('cfg-moeda').value||'USD').trim().toUpperCase()};
         if(!payload.pessoa||!payload.operacao||!payload.pagina||!payload.parte){ showToast('Preencha Pessoa, Operação, Página e Parte.', 'error'); return; }
 
-        google.script.run.withSuccessHandler(function(){
+        showLoading('Salvando configuração...');
+        google.script.run
+          .withSuccessHandler(function(){
+            hideLoading();
             showToast('Configuração salva com sucesso!', 'success');
             byId('btn-limpar').click();
             loadConfig();
-        }).upsertConfig(payload);
+          })
+          .withFailureHandler(function(err){
+            hideLoading();
+            var message = err && err.message ? err.message : 'Não foi possível salvar a configuração.';
+            showToast(message, 'error');
+          })
+          .upsertConfig(payload);
       };
     }
 
@@ -2298,6 +2838,7 @@ function todayIso(){
         });
         // FIM ADIÇÃO
 
+        setupCfgListControls();
         loadConfig();
         wirePQ();
         (function(){
